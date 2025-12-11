@@ -1,34 +1,36 @@
-// 1. Haritayı Başlat (İstanbul Odaklı)
+// 1. Haritayı Başlat (İstanbul Koordinatları: 41.0082, 28.9784)
+// setView([enlem, boylam], yakınlaştırma_seviyesi)
 var map = L.map('map').setView([41.0082, 28.9784], 10);
 
-// ----------------------------------------------------------------
-// ZEMİN HARİTASI: AYDINLIK VE SADE (IBB TARZI)
-// 'CartoDB Positron' kullanıyoruz. İBB haritası gibi temiz ve beyazdır.
-// ----------------------------------------------------------------
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    subdomains: 'abcd',
-    maxZoom: 20
+// 2. Temel Harita Katmanını Ekle (OpenStreetMap - Ücretsiz)
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
 // ----------------------------------------------------------------
-// TRAFİK VERİSİ (TOMTOM)
+// BURASI TRAFİK VERİSİ KISMI
 // ----------------------------------------------------------------
+
+// DİKKAT: Buraya TomTom sitesinden alacağın kendi API KEY'ini yazmalısın.
+// Şimdilik örnek bir key yapısı koyuyorum (bu çalışmaz, kendininkini almalısın).
 const API_KEY = 'uWD6Bs17qsOMpQY9yMZJejwu6YnErjWk'; 
 
-// 'absolute' modu: Hızı kesin renklerle (Yeşil/Kırmızı) gösterir.
-// thickness=10: Çizgileri biraz kalınlaştırır ki net görünsün.
-const trafficUrl = `https://api.tomtom.com/traffic/map/4/tile/flow/absolute/{z}/{x}/{y}.png?key=${API_KEY}&thickness=10`;
+// Trafik Katmanı URL Yapısı (Backend mantığı: x, y, z koordinatlarına göre resim ister)
+const trafficUrl = `https://api.tomtom.com/traffic/map/4/tile/flow/relative0/{z}/{x}/{y}.png?key=${API_KEY}`;
 
-// Trafik katmanını haritaya ekle
-L.tileLayer(trafficUrl, {
-    opacity: 1, // Şeffaflık yok, renkler net olsun
-    maxZoom: 22
-}).addTo(map);
+// Eğer API Key'in varsa trafik katmanını haritaya ekle
+if (API_KEY !== 'SENİN_TOMTOM_API_KEYİN_BURAYA') {
+    L.tileLayer(trafficUrl, {
+        opacity: 0.7, // Trafik renklerinin şeffaflığı
+        maxZoom: 22
+    }).addTo(map);
+    console.log("Trafik katmanı yüklendi.");
+} else {
+    console.warn("Lütfen script.js dosyasına geçerli bir API Key girin!");
+    alert("Trafik verisini görmek için script.js dosyasına API Key eklemelisin!");
+}
 
-console.log("İBB Tarzı Trafik Haritası Yüklendi.");
-
-// İstanbul Merkez İşaretçisi
+// İstanbul'a bir işaretçi (Marker) koyalım
 L.marker([41.0082, 28.9784]).addTo(map)
-    .bindPopup('<b>İstanbul Canlı Trafik</b><br>Veriler güncel.')
+    .bindPopup('İstanbul Merkez')
     .openPopup();
