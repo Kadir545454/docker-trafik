@@ -13,13 +13,13 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 // DİKKAT: Buraya TomTom sitesinden alacağın kendi API KEY'ini yazmalısın.
 // Şimdilik örnek bir key yapısı koyuyorum (bu çalışmaz, kendininkini almalısın).
-const API_KEY = 'SENİN_TOMTOM_API_KEYİN_BURAYA'; 
+const API_KEY = 'e4e5f1e8-ce4c-41d0-8442-b8d51c8129ac'; 
 
 // Trafik Katmanı URL Yapısı (Backend mantığı: x, y, z koordinatlarına göre resim ister)
 const trafficUrl = `https://api.tomtom.com/traffic/map/4/tile/flow/relative0/{z}/{x}/{y}.png?key=${API_KEY}`;
 
 // Eğer API Key'in varsa trafik katmanını haritaya ekle
-if (API_KEY !== 'SENİN_TOMTOM_API_KEYİN_BURAYA') {
+if (API_KEY !== 'e4e5f1e8-ce4c-41d0-8442-b8d51c8129ac') {
     L.tileLayer(trafficUrl, {
         opacity: 0.7, // Trafik renklerinin şeffaflığı
         maxZoom: 22
