@@ -1,36 +1,29 @@
-// 1. Haritayı Başlat (İstanbul Koordinatları)
+// 1. Haritayı Başlat
 var map = L.map('map').setView([41.0082, 28.9784], 10);
 
-// 2. Temel Harita Katmanını Ekle (OpenStreetMap)
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors'
+// ----------------------------------------------------------------
+// ZEMİN: TAMAMEN SİYAH-BEYAZ (Gri Tonlamalı)
+// Bu harita hiçbir yolu renkli boyamaz. Sadece gridir.
+// Böylece göreceğin TEK renk, gerçek trafik olacaktır.
+// ----------------------------------------------------------------
+L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png', {
+    maxZoom: 20,
+    attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>'
 }).addTo(map);
 
 // ----------------------------------------------------------------
-// BURASI TRAFİK VERİSİ KISMI
+// TRAFİK KATMANI (TomTom)
 // ----------------------------------------------------------------
-
-// Senin TomTom API Anahtarın
+// BURAYA DİKKAT: Lütfen tiresiz, gerçek API Key'ini yapıştır.
 const API_KEY = 'uWD6Bs17qsOMpQY9yMZJejwu6YnErjWk'; 
 
-// DÜZELTME 1: 'relative0' yerine 'absolute' kullandık ve kalınlık (thickness) ekledik.
-// Bu sayede yolları daha net göreceksin.
 const trafficUrl = `https://api.tomtom.com/traffic/map/4/tile/flow/absolute/{z}/{x}/{y}.png?key=${API_KEY}&thickness=10`;
 
-// DÜZELTME 2: Mantık hatasını düzelttik.
-// Sadece "API_KEY boş değilse" kontrolü yapıyoruz.
-if (API_KEY && API_KEY !== 'SENİN_TOMTOM_API_KEYİN_BURAYA') {
-    L.tileLayer(trafficUrl, {
-        opacity: 1, // Görünürlüğü tam açtık
-        maxZoom: 22
-    }).addTo(map);
-    console.log("Trafik katmanı başarıyla yüklendi.");
-} else {
-    console.warn("API Key girilmemiş!");
-    alert("Trafik verisi için API Key lazım.");
-}
+// Trafik katmanını ekle
+L.tileLayer(trafficUrl, {
+    opacity: 1,
+    maxZoom: 22
+}).addTo(map);
 
-// İstanbul'a bir işaretçi
-L.marker([41.0082, 28.9784]).addTo(map)
-    .bindPopup('İstanbul Merkez')
-    .openPopup();
+// Eğer API Key hatalıysa konsola uyarı basar
+console.log("Siyah-Beyaz Zemin Yüklendi. Renk görüyorsan o trafiktir.");
