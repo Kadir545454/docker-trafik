@@ -3,67 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İstanbul Trafik Takip</title>
+    <title>Canlı Trafik - Kesin Çözüm</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <style>
-        /* Sayfa Ayarları */
-        body { margin: 0; padding: 0; font-family: 'Poppins', sans-serif; overflow: hidden; }
+        /* CSS AYARLARI BURADA */
+        body { margin: 0; padding: 0; overflow: hidden; background-color: #000; }
+        #map { width: 100vw; height: 100vh; }
         
-        /* Harita Ayarı */
-        #map { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
-
-        /* YÜZEN KARTLAR (Buzlu Cam Efekti) */
-        .info-card, .legend-card {
+        /* Bilgi Kutusu Tasarımı */
+        .info-box {
             position: absolute;
-            background: rgba(255, 255, 255, 0.9); /* Beyaz zemin */
-            backdrop-filter: blur(10px); /* Bulanıklık */
-            padding: 15px 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            z-index: 999; /* Haritanın üstünde */
-            border: 1px solid rgba(0,0,0,0.1);
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 1000;
+            font-family: sans-serif;
+            border: 1px solid #444;
         }
-
-        /* Sol Üst Kart */
-        .info-card { top: 20px; left: 20px; min-width: 200px; }
-        .info-card h1 { margin: 0; font-size: 20px; color: #2c3e50; font-weight: 600; }
-        .info-card p { margin: 5px 0 10px 0; font-size: 13px; color: #7f8c8d; }
-
-        /* Yeşil Nokta Animasyonu */
-        .status { display: flex; align-items: center; font-size: 12px; color: #27ae60; font-weight: bold; }
-        .dot { width: 8px; height: 8px; background-color: #27ae60; border-radius: 50%; margin-right: 8px; animation: blink 1.5s infinite; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
-
-        /* Sağ Alt Renk Skalası */
-        .legend-card { bottom: 30px; right: 20px; width: 220px; text-align: center; }
-        .legend-card h3 { margin: 0 0 8px 0; font-size: 13px; color: #2c3e50; }
-        .gradient-bar { height: 8px; width: 100%; border-radius: 4px; background: linear-gradient(to right, #00ff00, #ffff00, #ff0000); margin-bottom: 5px; }
-        .labels { display: flex; justify-content: space-between; font-size: 10px; color: #7f8c8d; font-weight: 600; }
+        .legend {
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        .color-box { display: inline-block; width: 10px; height: 10px; margin-right: 5px; }
     </style>
 </head>
 <body>
 
-    <div id="map"></div>
-
-    <div class="info-card">
-        <h1>İstanbul Trafik</h1>
-        <p>Canlı Yoğunluk Haritası</p>
-        <div class="status"><span class="dot"></span> Veriler Anlık</div>
-    </div>
-
-    <div class="legend-card">
-        <h3>Yoğunluk Durumu</h3>
-        <div class="gradient-bar"></div>
-        <div class="labels">
-            <span>Akıcı (Yeşil)</span>
-            <span>Yoğun</span>
-            <span>Durdu (Kırmızı)</span>
+    <div class="info-box">
+        <h2>Canlı Trafik Durumu</h2>
+        <p>Harita Rengi: <b>SİYAH (Dark Mode)</b></p>
+        <div class="legend">
+            <div><span class="color-box" style="background:green;"></span>Yeşil: Açık</div>
+            <div><span class="color-box" style="background:red;"></span>Kırmızı: Trafik Var</div>
         </div>
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="js/script.js"></script> </body>
+    <div id="map"></div>
+
+    <script>
+        // JAVASCRIPT AYARLARI BURADA
+        
+        // 1. Haritayı Başlat
+        var map = L.map('map').setView([41.0082, 28.9784], 10);
+
+        // 2. KAPKARA HARİTA (CartoDB Dark Matter)
+        // Bu harita standart olarak SİYAH'tır. Eğer ekranı beyaz görüyorsan kod güncellenmemiş demektir.
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap, © CartoDB',
+            maxZoom: 20
+        }).addTo(map);
+
+        // 3. TRAFİK AYARI
+        // BURAYA KENDİ ANAHTARINI YAPIŞTIR (Tiresiz olanı!)
+        const API_KEY = 'uWD6Bs17qsOMpQY9yMZJejwu6YnErjWk'; 
+
+        const trafficUrl = `https://api.tomtom.com/traffic/map/4/tile/flow/absolute/{z}/{x}/{y}.png?key=${API_KEY}&thickness=10`;
+
+        if (API_KEY && API_KEY !== 'BURAYA_KENDI_API_KEYINI_YAPISTIR') {
+            L.tileLayer(trafficUrl, { opacity: 1, maxZoom: 22 }).addTo(map);
+            console.log("Trafik katmanı eklendi.");
+        } else {
+            alert("Lütfen koda API KEY'ini ekle!");
+        }
+    </script>
+</body>
 </html>
