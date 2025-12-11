@@ -1,32 +1,34 @@
-// 1. Haritayı Başlat (İstanbul)
+// 1. Haritayı Başlat (İstanbul Odaklı)
 var map = L.map('map').setView([41.0082, 28.9784], 10);
 
 // ----------------------------------------------------------------
-// HARİTA ZEMİNİ (Esri Dark Gray - Koyu Gri)
-// Simsiyah değil, koyu gri olduğu için yollar daha net görünür.
+// ZEMİN HARİTASI: AYDINLIK VE SADE (IBB TARZI)
+// 'CartoDB Positron' kullanıyoruz. İBB haritası gibi temiz ve beyazdır.
 // ----------------------------------------------------------------
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
-    maxZoom: 16
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 20
 }).addTo(map);
 
 // ----------------------------------------------------------------
-// TRAFİK VERİSİ (ENGEL YOK, DİREKT YÜKLENİR)
+// TRAFİK VERİSİ (TOMTOM)
 // ----------------------------------------------------------------
 const API_KEY = '9ecda3a7-d9be-44ce-99a5-2bb9fca915ac'; 
 
-// Trafik URL'si
-const trafficUrl = `https://api.tomtom.com/traffic/map/4/tile/flow/absolute/{z}/{x}/{y}.png?key=${API_KEY}&thickness=12`;
+// 'absolute' modu: Hızı kesin renklerle (Yeşil/Kırmızı) gösterir.
+// thickness=10: Çizgileri biraz kalınlaştırır ki net görünsün.
+const trafficUrl = `https://api.tomtom.com/traffic/map/4/tile/flow/absolute/{z}/{x}/{y}.png?key=${API_KEY}&thickness=10`;
 
-// Koşulsuz şartsız trafik katmanını ekle
+// Trafik katmanını haritaya ekle
 L.tileLayer(trafficUrl, {
-    opacity: 1, 
+    opacity: 1, // Şeffaflık yok, renkler net olsun
     maxZoom: 22
 }).addTo(map);
 
-console.log("Trafik katmanı yüklendi.");
+console.log("İBB Tarzı Trafik Haritası Yüklendi.");
 
-// İşaretçi
+// İstanbul Merkez İşaretçisi
 L.marker([41.0082, 28.9784]).addTo(map)
-    .bindPopup('İstanbul Trafik Durumu')
+    .bindPopup('<b>İstanbul Canlı Trafik</b><br>Veriler güncel.')
     .openPopup();
