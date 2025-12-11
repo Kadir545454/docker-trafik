@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detaylı Trafik Haritası</title>
+    <title>Gerçek Trafik Yoğunluğu</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -19,82 +19,90 @@
             top: 20px;
             left: 20px;
             background: rgba(255, 255, 255, 0.95);
-            padding: 20px;
-            border-radius: 12px;
+            padding: 15px;
+            border-radius: 10px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             z-index: 1000;
-            width: 250px;
+            width: 220px;
             border-left: 5px solid #2e7d32;
         }
-        .info-card h2 { margin: 0; font-size: 18px; color: #333; }
-        .info-card p { margin: 5px 0 0; font-size: 13px; color: #666; }
+        .info-card h2 { margin: 0; font-size: 16px; color: #333; }
+        .info-card p { margin: 5px 0 0; font-size: 12px; color: #666; }
 
-        /* Renk Skalası */
+        /* Trafik Skalası */
         .legend {
             position: absolute;
             bottom: 30px;
             right: 20px;
             background: white;
-            padding: 10px 15px;
+            padding: 10px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.2);
             z-index: 1000;
             font-size: 12px;
         }
+        /* BURASI DEĞİŞTİ: Artık renkler Google Maps gibi */
         .gradient-bar {
-            width: 180px;
+            width: 150px;
             height: 8px;
-            background: linear-gradient(to right, #6EBE4A, #FFC300, #E60000);
+            /* Yeşil (Açık) -> Turuncu (Yavaş) -> Kırmızı (Kilit) -> Koyu Kırmızı (Durdu) */
+            background: linear-gradient(to right, #6EBE4A, #FFC300, #FF0000, #8B0000);
             border-radius: 4px;
             margin-bottom: 5px;
         }
-        .labels { display: flex; justify-content: space-between; color: #444; font-weight: bold; }
+        .labels { display: flex; justify-content: space-between; color: #444; font-weight: bold; font-size: 10px; }
     </style>
 </head>
 <body>
 
     <div class="info-card">
-        <h2>Canlı Trafik</h2>
-        <p>Mahalle ve Sokak Detaylı</p>
+        <h2>Trafik Yoğunluğu</h2>
+        <p>Göreceli Sıkışıklık Modu</p>
     </div>
 
     <div class="legend">
         <div class="gradient-bar"></div>
         <div class="labels">
-            <span>Akıcı</span>
+            <span>Açık</span>
+            <span>Yavaş</span>
             <span>Yoğun</span>
-            <span>Kilit</span>
         </div>
     </div>
 
     <div id="map"></div>
 
     <script>
-        var map = L.map('map').setView([41.0082, 28.9784], 11); // Biraz daha yakından başlat
+        // Haritayı biraz daha yakından başlatalım
+        var map = L.map('map').setView([41.0082, 28.9784], 12);
 
-        // 1. ZEMİN HARİTASI: "VOYAGER" (Detaylı ve Okunaklı)
-        // Bu harita sokak isimlerini ve önemli yerleri net gösterir.
+        // 1. ZEMİN: VOYAGER (Sokak İsimleri Net)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
             attribution: '© OpenStreetMap, © CartoDB',
             maxZoom: 20
         }).addTo(map);
 
-        // 2. API KEY (Kendi Key'ini Buraya Yapıştır)
+        // 2. API KEY (Senin Key'ini Buraya Yapıştır - Tiresiz Olan!)
         const API_KEY = 'uWD6Bs17qsOMpQY9yMZJejwu6YnErjWk'; 
 
-        // Trafik Kodu
-        if (API_KEY && API_KEY !== 'BURAYA_GERCEK_API_KEYINI_YAPISTIR' && !API_KEY.includes('-')) {
-            const trafficUrl = `https://api.tomtom.com/traffic/map/4/tile/flow/absolute/{z}/{x}/{y}.png?key=${API_KEY}&thickness=10`;
-            L.tileLayer(trafficUrl, { opacity: 1, maxZoom: 22 }).addTo(map);
-            console.log("Trafik yüklendi.");
+        // --- DÜZELTME BURADA ---
+        // 'absolute' yerine 'relative0' kullanıyoruz.
+        // Bu mod, yolun türüne bakmaz, SIKIŞIKLIĞA bakar.
+        // relative0 = Serbest akışa göre hız farkı.
+        
+        if (API_KEY && API_KEY !== 'BURAYA_GERCEK_API_KEYINI_YAPISTIR') {
+            const trafficUrl = `https://api.tomtom.com/traffic/map/4/tile/flow/relative0/{z}/{x}/{y}.png?key=${API_KEY}`;
+            
+            L.tileLayer(trafficUrl, { 
+                opacity: 0.9, 
+                maxZoom: 22 
+            }).addTo(map);
+            
+            console.log("Göreceli Trafik (Sıkışıklık) Modu Yüklendi.");
         } else {
-            console.warn("API Key girilmemiş veya hatalı (Tire içermemeli).");
+            console.warn("API Key Eksik!");
         }
 
-        // Marker
-        L.marker([41.0082, 28.9784]).addTo(map).bindPopup('İstanbul').openPopup();
+        L.marker([41.0082, 28.9784]).addTo(map).bindPopup('İstanbul');
     </script>
-</body>
-</html>
 </body>
 </html>
