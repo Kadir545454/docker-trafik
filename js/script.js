@@ -14,7 +14,7 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
 // ----------------------------------------------------------------
 // TRAFİK VERİSİ (TOMTOM)
 // ----------------------------------------------------------------
-const API_KEY = '9ecda3a7-d9be-44ce-99a5-2bb9fca915ac'; 
+const API_KEY = 'uWD6Bs17qsOMpQY9yMZJejwu6YnErjWk'; 
 
 // 'absolute' modu: Hızı kesin renklerle (Yeşil/Kırmızı) gösterir.
 // thickness=10: Çizgileri biraz kalınlaştırır ki net görünsün.
