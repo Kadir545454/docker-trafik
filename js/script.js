@@ -1,8 +1,7 @@
-// 1. Haritayı Başlat (İstanbul Koordinatları: 41.0082, 28.9784)
-// setView([enlem, boylam], yakınlaştırma_seviyesi)
+// 1. Haritayı Başlat (İstanbul Koordinatları)
 var map = L.map('map').setView([41.0082, 28.9784], 10);
 
-// 2. Temel Harita Katmanını Ekle (OpenStreetMap - Ücretsiz)
+// 2. Temel Harita Katmanını Ekle (OpenStreetMap)
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors'
 }).addTo(map);
@@ -11,26 +10,27 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 // BURASI TRAFİK VERİSİ KISMI
 // ----------------------------------------------------------------
 
-// DİKKAT: Buraya TomTom sitesinden alacağın kendi API KEY'ini yazmalısın.
-// Şimdilik örnek bir key yapısı koyuyorum (bu çalışmaz, kendininkini almalısın).
+// Senin TomTom API Anahtarın
 const API_KEY = 'uWD6Bs17qsOMpQY9yMZJejwu6YnErjWk'; 
 
-// Trafik Katmanı URL Yapısı (Backend mantığı: x, y, z koordinatlarına göre resim ister)
-const trafficUrl = `https://api.tomtom.com/traffic/map/4/tile/flow/relative0/{z}/{x}/{y}.png?key=${API_KEY}`;
+// DÜZELTME 1: 'relative0' yerine 'absolute' kullandık ve kalınlık (thickness) ekledik.
+// Bu sayede yolları daha net göreceksin.
+const trafficUrl = `https://api.tomtom.com/traffic/map/4/tile/flow/absolute/{z}/{x}/{y}.png?key=${API_KEY}&thickness=10`;
 
-// Eğer API Key'in varsa trafik katmanını haritaya ekle
-if (API_KEY !== 'SENİN_TOMTOM_API_KEYİN_BURAYA') {
+// DÜZELTME 2: Mantık hatasını düzelttik.
+// Sadece "API_KEY boş değilse" kontrolü yapıyoruz.
+if (API_KEY && API_KEY !== 'SENİN_TOMTOM_API_KEYİN_BURAYA') {
     L.tileLayer(trafficUrl, {
-        opacity: 0.7, // Trafik renklerinin şeffaflığı
+        opacity: 1, // Görünürlüğü tam açtık
         maxZoom: 22
     }).addTo(map);
-    console.log("Trafik katmanı yüklendi.");
+    console.log("Trafik katmanı başarıyla yüklendi.");
 } else {
-    console.warn("Lütfen script.js dosyasına geçerli bir API Key girin!");
-    alert("Trafik verisini görmek için script.js dosyasına API Key eklemelisin!");
+    console.warn("API Key girilmemiş!");
+    alert("Trafik verisi için API Key lazım.");
 }
 
-// İstanbul'a bir işaretçi (Marker) koyalım
+// İstanbul'a bir işaretçi
 L.marker([41.0082, 28.9784]).addTo(map)
     .bindPopup('İstanbul Merkez')
     .openPopup();
