@@ -26,15 +26,16 @@
             background: rgba(255,255,255,0.9); padding: 10px;
             border-radius: 5px; z-index: 1000;
             box-shadow: 0 2px 10px rgba(0,0,0,0.2); font-size: 13px;
+            border-left: 5px solid #4285F4; /* Google Mavisi */
         }
     </style>
 </head>
 <body>
 
     <div class="info-panel">
-        <b>Görünüm Değiştirme:</b><br>
-        Sağ üstteki ⬜ ikonuna gelerek<br>
-        Gece, Uydu veya Gri mod seçebilirsiniz.
+        <b>🚦 Canlı Trafik Modu Aktif</b><br>
+        Sağ üstteki menüden harita<br>
+        tipini değiştirebilirsin.
     </div>
 
     <div id="map"></div>
@@ -43,49 +44,46 @@
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
     <script>
-        // --- 1. HARİTA KATMANLARI (TILE LAYERS) ---
+        // --- 1. HARİTA KATMANLARI ---
         
-        // A. Standart Sokak (OpenStreetMap)
-        var standartMod = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
+        // A. Google Canlı Trafik (Varsayılan yapılacak)
+        var googleTrafik = L.tileLayer('https://{s}.google.com/vt/lyrs=m,traffic&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+            attribution: '© Google Maps'
         });
 
-        // B. Uydu Görüntüsü (Esri World Imagery)
-        var uyduMod = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles © Esri'
+        // B. Google Hibrit (Uydu + Yollar)
+        var googleUydu = L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+            attribution: '© Google Maps'
         });
 
-        // C. Gece Modu (CartoDB Dark Matter)
+        // C. Gece Modu
         var geceMod = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             attribution: '© OpenStreetMap, © CartoDB'
         });
 
-        // D. Monokrom / Gri Mod (CartoDB Positron)
-        var griMod = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '© OpenStreetMap, © CartoDB'
-        });
-
-        // Haritayı Başlat (Varsayılan olarak 'Standart' ile başlasın)
+        // Haritayı Başlat (Google Trafik ile başlasın)
         var map = L.map('map', {
-            center: [41.0082, 28.9784],
+            center: [41.0082, 28.9784], // İstanbul Merkez
             zoom: 12,
-            layers: [standartMod] // İlk açılış katmanı
+            layers: [googleTrafik] // İlk açılışta trafik görünsün
         });
 
         // --- 2. KATMAN KONTROL MENÜSÜ ---
         var baseMaps = {
-            "🌞 Sokak Görünümü": standartMod,
-            "🛰️ Uydu Görüntüsü": uyduMod,
-            "🌑 Gece Modu": geceMod,
-            "⚪ Monokrom (Gri)": griMod
+            "🚦 Google Trafik": googleTrafik,
+            "🛰️ Uydu Görüntüsü": googleUydu,
+            "🌑 Gece Modu": geceMod
         };
         
-        // Menüyü haritaya ekle (Sağ Üst Köşe)
         L.control.layers(baseMaps).addTo(map);
 
-        // --- 3. ESKİ ÖZELLİKLERİN KORUNMASI (ARAMA & İŞARETLEME) ---
+        // --- 3. ARAMA VE İŞARETLEME ÖZELLİKLERİ ---
 
-        // Arama Özelliği
+        // Arama Kutusu
         var aramaKatmani = null;
         L.Control.geocoder({ defaultMarkGeocode: false })
         .on('markgeocode', function(e) {
@@ -100,14 +98,14 @@
         })
         .addTo(map);
 
-        // Sağ Tık ile İşaretleme ve Silme
+        // Sağ Tık İşaretleme
         map.on('contextmenu', function(e) {
             var yeniMarker = L.marker(e.latlng).addTo(map);
             var icerik = document.createElement('div');
             icerik.innerHTML = `<b>Konum İşaretlendi</b><br>Lat: ${e.latlng.lat.toFixed(4)}`;
             var silButonu = document.createElement('button');
             silButonu.className = 'delete-btn';
-            silButonu.innerHTML = 'Bu İşareti Sil';
+            silButonu.innerHTML = 'Sil';
             silButonu.onclick = function() { map.removeLayer(yeniMarker); };
             icerik.appendChild(silButonu);
             yeniMarker.bindPopup(icerik).openPopup();
