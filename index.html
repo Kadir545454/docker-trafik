@@ -3,106 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerçek Trafik Yoğunluğu</title>
+    <title>Canlı Trafik Yoğunluğu</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    
     <style>
-        body { margin: 0; padding: 0; font-family: 'Roboto', sans-serif; }
-        #map { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        #map { height: 100vh; width: 100%; }
 
-        /* Bilgi Kartı */
-        .info-card {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            z-index: 1000;
-            width: 220px;
-            border-left: 5px solid #2e7d32;
+        /* Silme Butonu Stili */
+        .delete-btn {
+            background-color: #ff4444; color: white; border: none;
+            padding: 5px 10px; border-radius: 4px; cursor: pointer;
+            font-size: 12px; margin-top: 5px; width: 100%;
         }
-        .info-card h2 { margin: 0; font-size: 16px; color: #333; }
-        .info-card p { margin: 5px 0 0; font-size: 12px; color: #666; }
+        .delete-btn:hover { background-color: #cc0000; }
 
-        /* Trafik Skalası */
-        .legend {
-            position: absolute;
-            bottom: 30px;
-            right: 20px;
-            background: white;
-            padding: 10px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            z-index: 1000;
-            font-size: 12px;
+        /* Bilgi Paneli */
+        .info-panel {
+            position: absolute; top: 10px; left: 60px;
+            background: rgba(255,255,255,0.9); padding: 10px;
+            border-radius: 5px; z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2); font-size: 13px;
         }
-        /* BURASI DEĞİŞTİ: Artık renkler Google Maps gibi */
-        .gradient-bar {
-            width: 150px;
-            height: 8px;
-            /* Yeşil (Açık) -> Turuncu (Yavaş) -> Kırmızı (Kilit) -> Koyu Kırmızı (Durdu) */
-            background: linear-gradient(to right, #6EBE4A, #FFC300, #FF0000, #8B0000);
-            border-radius: 4px;
-            margin-bottom: 5px;
-        }
-        .labels { display: flex; justify-content: space-between; color: #444; font-weight: bold; font-size: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="info-card">
-        <h2>Trafik Yoğunluğu</h2>
-        <p>Göreceli Sıkışıklık Modu</p>
-    </div>
-
-    <div class="legend">
-        <div class="gradient-bar"></div>
-        <div class="labels">
-            <span>Açık</span>
-            <span>Yavaş</span>
-            <span>Yoğun</span>
-        </div>
+    <div class="info-panel">
+        <b>Görünüm Değiştirme:</b><br>
+        Sağ üstteki ⬜ ikonuna gelerek<br>
+        Gece, Uydu veya Gri mod seçebilirsiniz.
     </div>
 
     <div id="map"></div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
     <script>
-        // Haritayı biraz daha yakından başlatalım
-        var map = L.map('map').setView([41.0082, 28.9784], 12);
-
-        // 1. ZEMİN: VOYAGER (Sokak İsimleri Net)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            attribution: '© OpenStreetMap, © CartoDB',
-            maxZoom: 20
-        }).addTo(map);
-
-        // 2. API KEY (Senin Key'ini Buraya Yapıştır - Tiresiz Olan!)
-        const API_KEY = 'uWD6Bs17qsOMpQY9yMZJejwu6YnErjWk'; 
-
-        // --- DÜZELTME BURADA ---
-        // 'absolute' yerine 'relative0' kullanıyoruz.
-        // Bu mod, yolun türüne bakmaz, SIKIŞIKLIĞA bakar.
-        // relative0 = Serbest akışa göre hız farkı.
+        // --- 1. HARİTA KATMANLARI (TILE LAYERS) ---
         
-        if (API_KEY && API_KEY !== 'BURAYA_GERCEK_API_KEYINI_YAPISTIR') {
-            const trafficUrl = `https://api.tomtom.com/traffic/map/4/tile/flow/relative0/{z}/{x}/{y}.png?key=${API_KEY}`;
-            
-            L.tileLayer(trafficUrl, { 
-                opacity: 0.9, 
-                maxZoom: 22 
-            }).addTo(map);
-            
-            console.log("Göreceli Trafik (Sıkışıklık) Modu Yüklendi.");
-        } else {
-            console.warn("API Key Eksik!");
-        }
+        // A. Standart Sokak (OpenStreetMap)
+        var standartMod = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        });
 
-        L.marker([41.0082, 28.9784]).addTo(map).bindPopup('İstanbul');
+        // B. Uydu Görüntüsü (Esri World Imagery)
+        var uyduMod = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles © Esri'
+        });
+
+        // C. Gece Modu (CartoDB Dark Matter)
+        var geceMod = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap, © CartoDB'
+        });
+
+        // D. Monokrom / Gri Mod (CartoDB Positron)
+        var griMod = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap, © CartoDB'
+        });
+
+        // Haritayı Başlat (Varsayılan olarak 'Standart' ile başlasın)
+        var map = L.map('map', {
+            center: [41.0082, 28.9784],
+            zoom: 12,
+            layers: [standartMod] // İlk açılış katmanı
+        });
+
+        // --- 2. KATMAN KONTROL MENÜSÜ ---
+        var baseMaps = {
+            "🌞 Sokak Görünümü": standartMod,
+            "🛰️ Uydu Görüntüsü": uyduMod,
+            "🌑 Gece Modu": geceMod,
+            "⚪ Monokrom (Gri)": griMod
+        };
+        
+        // Menüyü haritaya ekle (Sağ Üst Köşe)
+        L.control.layers(baseMaps).addTo(map);
+
+        // --- 3. ESKİ ÖZELLİKLERİN KORUNMASI (ARAMA & İŞARETLEME) ---
+
+        // Arama Özelliği
+        var aramaKatmani = null;
+        L.Control.geocoder({ defaultMarkGeocode: false })
+        .on('markgeocode', function(e) {
+            if (aramaKatmani) map.removeLayer(aramaKatmani);
+            var bbox = e.geocode.bbox;
+            aramaKatmani = L.polygon([
+                bbox.getSouthEast(), bbox.getNorthEast(),
+                bbox.getNorthWest(), bbox.getSouthWest()
+            ]).addTo(map);
+            map.fitBounds(aramaKatmani.getBounds());
+            aramaKatmani.on('click', function() { map.removeLayer(this); aramaKatmani = null; });
+        })
+        .addTo(map);
+
+        // Sağ Tık ile İşaretleme ve Silme
+        map.on('contextmenu', function(e) {
+            var yeniMarker = L.marker(e.latlng).addTo(map);
+            var icerik = document.createElement('div');
+            icerik.innerHTML = `<b>Konum İşaretlendi</b><br>Lat: ${e.latlng.lat.toFixed(4)}`;
+            var silButonu = document.createElement('button');
+            silButonu.className = 'delete-btn';
+            silButonu.innerHTML = 'Bu İşareti Sil';
+            silButonu.onclick = function() { map.removeLayer(yeniMarker); };
+            icerik.appendChild(silButonu);
+            yeniMarker.bindPopup(icerik).openPopup();
+        });
+
     </script>
 </body>
 </html>
