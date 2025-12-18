@@ -1,4 +1,116 @@
-<div class="fav-panel" id="favPanel">
-    <b>⭐ Favorilerim</b>
-    <div id="favList"></div>
-</div>
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stateful Canlı Trafik & Favoriler</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        #map { height: 100vh; width: 100%; position: absolute; z-index: 1; }
+
+        /* Favoriler Paneli */
+        .fav-panel {
+            position: absolute; top: 80px; left: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            width: 200px; max-height: 300px;
+            z-index: 1000; border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            padding: 15px; overflow-y: auto;
+        }
+        .fav-title { border-bottom: 2px solid #4285F4; margin-bottom: 10px; padding-bottom: 5px; font-weight: bold; }
+        .fav-item { 
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 5px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 13px;
+        }
+        .fav-item:hover { background: #f0f0f0; }
+        .fav-item span { flex-grow: 1; }
+        
+        /* Butonlar */
+        .add-fav-btn { background: #34a853; color: white; border: none; padding: 5px; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 5px; }
+        .del-btn { color: #ea4335; cursor: pointer; font-weight: bold; padding: 0 5px; }
+        .info-panel {
+            position: absolute; top: 10px; left: 60px;
+            background: white; padding: 10px; border-radius: 5px;
+            z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="info-panel">
+        <b>🚦 Trafik Modu</b> | Sağ tıkla favori ekle
+    </div>
+
+    <div class="fav-panel">
+        <div class="fav-title">⭐ Favori Şehirlerim</div>
+        <div id="favList"></div>
+    </div>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
+    <script>
+        // --- 1. HARİTA VE KATMANLAR ---
+        var googleTrafik = L.tileLayer('https://{s}.google.com/vt/lyrs=m,traffic&x={x}&y={y}&z={z}', {
+            maxZoom: 20, subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], attribution: '© Google'
+        });
+
+        var map = L.map('map', {
+            center: [41.0082, 28.9784],
+            zoom: 12,
+            layers: [googleTrafik]
+        });
+
+        // --- 2. STATE (DURUM) YÖNETİMİ ---
+        let favoriler = JSON.parse(localStorage.getItem('my_favs')) || [];
+
+        function saveAndRender() {
+            localStorage.setItem('my_favs', JSON.stringify(favoriler));
+            const list = document.getElementById('favList');
+            list.innerHTML = favoriler.length === 0 ? '<small>Henüz favori yok</small>' : '';
+            
+            favoriler.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'fav-item';
+                div.innerHTML = `
+                    <span onclick="map.flyTo([${item.lat}, ${item.lng}], 13)">${item.name}</span>
+                    <div class="del-btn" onclick="removeFav(${index})">×</div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function addFav(name, lat, lng) {
+            if(!name) name = "İsimsiz Konum";
+            favoriler.push({ name, lat, lng });
+            saveAndRender();
+            map.closePopup();
+        }
+
+        function removeFav(index) {
+            favoriler.splice(index, 1);
+            saveAndRender();
+        }
+
+        // --- 3. ETKİLEŞİMLER ---
+        map.on('contextmenu', function(e) {
+            const popupDiv = document.createElement('div');
+            popupDiv.innerHTML = `
+                <input type="text" id="favName" placeholder="Şehir/Mekan adı" style="width:140px; padding:5px;"><br>
+                <button class="add-fav-btn" onclick="addFav(document.getElementById('favName').value, ${e.latlng.lat}, ${e.latlng.lng})">Burayı Favorile</button>
+            `;
+            L.popup().setLatLng(e.latlng).setContent(popupDiv).openOn(map);
+        });
+
+        // İlk açılışta verileri yükle
+        saveAndRender();
+
+    </script>
+</body>
+</html>
