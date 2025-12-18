@@ -1,29 +1,54 @@
-// 1. Haritayı Başlat
-var map = L.map('map').setView([41.0082, 28.9784], 10);
+// --- STATE YÖNETİMİ ---
 
-// ----------------------------------------------------------------
-// ZEMİN: TAMAMEN SİYAH-BEYAZ (Gri Tonlamalı)
-// Bu harita hiçbir yolu renkli boyamaz. Sadece gridir.
-// Böylece göreceğin TEK renk, gerçek trafik olacaktır.
-// ----------------------------------------------------------------
-L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20,
-    attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>'
-}).addTo(map);
+// 1. Sayfa yüklendiğinde LocalStorage'dan verileri çek
+let favoriler = JSON.parse(localStorage.getItem('favoriSehirler')) || [];
 
-// ----------------------------------------------------------------
-// TRAFİK KATMANI (TomTom)
-// ----------------------------------------------------------------
-// BURAYA DİKKAT: Lütfen tiresiz, gerçek API Key'ini yapıştır.
-const API_KEY = 'uWD6Bs17qsOMpQY9yMZJejwu6YnErjWk'; 
+function favorileriGuncelle() {
+    const listeDiv = document.getElementById('favList');
+    listeDiv.innerHTML = '';
+    
+    favoriler.forEach((sehir, index) => {
+        const item = document.createElement('div');
+        item.className = 'fav-item';
+        item.innerHTML = `
+            <span onclick="haritayaGit(${sehir.lat}, ${sehir.lng})">${sehir.ad}</span>
+            <button onclick="favoriSil(${index})" style="border:none; background:none; color:red; cursor:pointer">×</button>
+        `;
+        listeDiv.appendChild(item);
+    });
 
-const trafficUrl = `https://api.tomtom.com/traffic/map/4/tile/flow/absolute/{z}/{x}/{y}.png?key=${API_KEY}&thickness=10`;
+    // Durumu tarayıcıya kaydet (State Persistence)
+    localStorage.setItem('favoriSehirler', JSON.stringify(favoriler));
+}
 
-// Trafik katmanını ekle
-L.tileLayer(trafficUrl, {
-    opacity: 1,
-    maxZoom: 22
-}).addTo(map);
+function favoriEkle(ad, lat, lng) {
+    if(!ad) ad = "Yeni Konum";
+    favoriler.push({ ad, lat, lng });
+    favorileriGuncelle();
+    map.closePopup();
+}
 
-// Eğer API Key hatalıysa konsola uyarı basar
-console.log("Siyah-Beyaz Zemin Yüklendi. Renk görüyorsan o trafiktir.");
+function favoriSil(index) {
+    favoriler.splice(index, 1);
+    favorileriGuncelle();
+}
+
+function haritayaGit(lat, lng) {
+    map.flyTo([lat, lng], 13);
+}
+
+// Sağ tık menüsüne "Favorilere Ekle" butonu entegrasyonu
+map.on('contextmenu', function(e) {
+    var yeniMarker = L.marker(e.latlng).addTo(map);
+    var icerik = document.createElement('div');
+    
+    icerik.innerHTML = `
+        <input type="text" id="sehirAd" placeholder="Şehir adı..." style="width:100%; margin-bottom:5px;"><br>
+        <button class="add-fav-btn" onclick="favoriEkle(document.getElementById('sehirAd').value, ${e.latlng.lat}, ${e.latlng.lng})">⭐ Favorilere Ekle</button>
+    `;
+    
+    yeniMarker.bindPopup(icerik).openPopup();
+});
+
+// Başlangıçta listeyi doldur
+favorileriGuncelle();
