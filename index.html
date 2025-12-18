@@ -3,51 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stateful Canlı Trafik & Favoriler</title>
+    <title>Global Traffic Dashboard | API & Search</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
     
     <style>
-        body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #000; }
         #map { height: 100vh; width: 100%; position: absolute; z-index: 1; }
+
+        /* Üst Panel */
+        .header-bar {
+            position: absolute; top: 0; left: 0; right: 0;
+            background: rgba(18, 18, 18, 0.85); backdrop-filter: blur(10px);
+            color: white; padding: 12px 20px; z-index: 1001;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 2px solid #4285F4; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .header-bar h1 { margin: 0; font-size: 16px; font-weight: 600; color: #e8eaed; letter-spacing: 0.5px; }
+        .api-tag { background: #34a853; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
 
         /* Favoriler Paneli */
         .fav-panel {
-            position: absolute; top: 80px; left: 10px;
-            background: rgba(255, 255, 255, 0.95);
-            width: 200px; max-height: 300px;
-            z-index: 1000; border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            padding: 15px; overflow-y: auto;
+            position: absolute; top: 80px; left: 20px;
+            background: #fff; width: 250px; max-height: 450px;
+            z-index: 1000; border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            padding: 15px; overflow-y: auto; border: 1px solid #ddd;
         }
-        .fav-title { border-bottom: 2px solid #4285F4; margin-bottom: 10px; padding-bottom: 5px; font-weight: bold; }
-        .fav-item { 
+        .fav-header { font-weight: 800; color: #202124; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+        .fav-list-item { 
             display: flex; justify-content: space-between; align-items: center;
-            padding: 8px 5px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 13px;
+            padding: 10px; border-radius: 8px; margin-bottom: 6px; 
+            background: #f8f9fa; border: 1px solid transparent; transition: 0.3s;
         }
-        .fav-item:hover { background: #f0f0f0; }
-        .fav-item span { flex-grow: 1; }
-        
-        /* Butonlar */
-        .add-fav-btn { background: #34a853; color: white; border: none; padding: 5px; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 5px; }
-        .del-btn { color: #ea4335; cursor: pointer; font-weight: bold; padding: 0 5px; }
-        .info-panel {
-            position: absolute; top: 10px; left: 60px;
-            background: white; padding: 10px; border-radius: 5px;
-            z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); font-size: 13px;
-        }
+        .fav-list-item:hover { border-color: #4285F4; background: #eef4ff; cursor: pointer; transform: scale(1.02); }
+        .city-name { font-size: 14px; font-weight: 600; color: #3c4043; }
+        .delete-icon { color: #d93025; font-size: 18px; font-weight: bold; padding: 0 5px; cursor: pointer; }
+
+        /* Arama Kutusu Özelleştirme */
+        .leaflet-control-geocoder { border-radius: 8px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important; margin-top: 80px !important; margin-right: 20px !important; }
     </style>
 </head>
 <body>
 
-    <div class="info-panel">
-        <b>🚦 Trafik Modu</b> | Sağ tıkla favori ekle
+    <div class="header-bar">
+        <h1>🌍 DÜNYA CANLI TRAFİK YOĞUNLUĞU</h1>
+        <div class="api-tag">API: AKTİF</div>
     </div>
 
     <div class="fav-panel">
-        <div class="fav-title">⭐ Favori Şehirlerim</div>
+        <div class="fav-header">⭐ Favori Şehirler</div>
         <div id="favList"></div>
+        <p style="font-size: 10px; color: #70757a; margin-top: 15px;">* Şehir eklemek için haritaya sağ tıklayın.</p>
     </div>
 
     <div id="map"></div>
@@ -56,61 +64,67 @@
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
     <script>
-        // --- 1. HARİTA VE KATMANLAR ---
-        var googleTrafik = L.tileLayer('https://{s}.google.com/vt/lyrs=m,traffic&x={x}&y={y}&z={z}', {
-            maxZoom: 20, subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], attribution: '© Google'
-        });
+        // 1. API ve Harita Ayarları
+        const API_KEY = "uWD6Bs17qsOMpQY9yMZJejwu6YnErjWk";
+        var map = L.map('map', { zoomControl: false }).setView([41.0082, 28.9784], 11);
 
-        var map = L.map('map', {
-            center: [41.0082, 28.9784],
-            zoom: 12,
-            layers: [googleTrafik]
-        });
+        // Google Trafik Katmanı (Senin API Anahtarınla)
+        L.tileLayer('https://{s}.google.com/vt/lyrs=m,traffic&x={x}&y={y}&z={z}&key=' + API_KEY, {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+            attribution: '© Google Maps Traffic'
+        }).addTo(map);
 
-        // --- 2. STATE (DURUM) YÖNETİMİ ---
-        let favoriler = JSON.parse(localStorage.getItem('my_favs')) || [];
+        // Zoom kontrolünü sağ alta alalım
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        function saveAndRender() {
-            localStorage.setItem('my_favs', JSON.stringify(favoriler));
+        // 2. Arama Kutusu (Geocoder) Entegrasyonu
+        var geocoder = L.Control.geocoder({
+            defaultMarkGeocode: false,
+            placeholder: "Şehir veya adres ara...",
+            errorMessage: "Bulunamadı."
+        })
+        .on('markgeocode', function(e) {
+            var latlng = e.geocode.center;
+            map.flyTo(latlng, 13); // Aramadan sonra şehre yumuşak geçiş yap
+        })
+        .addTo(map);
+
+        // 3. Favori Sistemi (Stateful & API Ready)
+        let favs = JSON.parse(localStorage.getItem('traffic_app_favs')) || [];
+
+        function refreshFavs() {
             const list = document.getElementById('favList');
-            list.innerHTML = favoriler.length === 0 ? '<small>Henüz favori yok</small>' : '';
+            list.innerHTML = favs.length === 0 ? '<p style="color:gray; font-size:12px;">Henüz şehir eklenmedi.</p>' : '';
             
-            favoriler.forEach((item, index) => {
+            favs.forEach((item, i) => {
                 const div = document.createElement('div');
-                div.className = 'fav-item';
+                div.className = 'fav-list-item';
                 div.innerHTML = `
-                    <span onclick="map.flyTo([${item.lat}, ${item.lng}], 13)">${item.name}</span>
-                    <div class="del-btn" onclick="removeFav(${index})">×</div>
+                    <span class="city-name" onclick="map.flyTo([${item.lat}, ${item.lng}], 13)">📍 ${item.name}</span>
+                    <span class="delete-icon" onclick="deleteFav(${i})">×</span>
                 `;
                 list.appendChild(div);
             });
+            localStorage.setItem('traffic_app_favs', JSON.stringify(favs));
         }
 
-        function addFav(name, lat, lng) {
-            if(!name) name = "İsimsiz Konum";
-            favoriler.push({ name, lat, lng });
-            saveAndRender();
-            map.closePopup();
+        function deleteFav(i) {
+            favs.splice(i, 1);
+            refreshFavs();
         }
 
-        function removeFav(index) {
-            favoriler.splice(index, 1);
-            saveAndRender();
-        }
-
-        // --- 3. ETKİLEŞİMLER ---
-        map.on('contextmenu', function(e) {
-            const popupDiv = document.createElement('div');
-            popupDiv.innerHTML = `
-                <input type="text" id="favName" placeholder="Şehir/Mekan adı" style="width:140px; padding:5px;"><br>
-                <button class="add-fav-btn" onclick="addFav(document.getElementById('favName').value, ${e.latlng.lat}, ${e.latlng.lng})">Burayı Favorile</button>
-            `;
-            L.popup().setLatLng(e.latlng).setContent(popupDiv).openOn(map);
+        // Sağ tıkla yeni favori ekleme
+        map.on('contextmenu', (e) => {
+            const cityName = prompt("Bu bölgeyi hangi isimle kaydetmek istersiniz?");
+            if(cityName) {
+                favs.push({ name: cityName, lat: e.latlng.lat, lng: e.latlng.lng });
+                refreshFavs();
+            }
         });
 
-        // İlk açılışta verileri yükle
-        saveAndRender();
-
+        // Başlangıçta listeyi yükle
+        refreshFavs();
     </script>
 </body>
 </html>
